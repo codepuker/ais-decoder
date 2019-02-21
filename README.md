@@ -13,3 +13,4 @@ As I stated in my profile, I don't like programming. This is why I don't know ma
 Project Status
 The project is frozen. I'm not going (unless forced) to develop the code further. Occasionally I'll correct some bugs or clean the code. Current version is "j".
 
+What's in here

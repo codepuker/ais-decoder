@@ -1,0 +1,121 @@
+AIS TABLES
+
+mysql> show tables;
++--------------------+
+| Tables_in_ais      |
++--------------------+
+| ais_max_record     |
+| ais_stat_data      |
+| ais_stat_data_name |
+| ais_stat_data_temp |
+| ais_stat_login     |
+| ais_stat_login_log |
+| old_ais_stat_data  |
++--------------------+
+8 rows in set (0.00 sec)
+
+
+mysql> describe ais_max_record;
++-------+------------+------+-----+---------+-------+
+| Field | Type       | Null | Key | Default | Extra |
++-------+------------+------+-----+---------+-------+
+| type  | varchar(4) | NO   |     | NULL    |       |
+| value | int(12)    | NO   |     | NULL    |       |
++-------+------------+------+-----+---------+-------+
+*This table is used to store reception records from ais receiver.
+*It is populated by decoder software and by a script run every night at 23
+
+mysql> describe ais_stat_data;
++-----------+---------+------+-----+---------+----------------+
+| Field     | Type    | Null | Key | Default | Extra          |
++-----------+---------+------+-----+---------+----------------+
+| id        | int(11) | NO   | PRI | NULL    | auto_increment |
+| timestamp | int(10) | NO   | MUL | NULL    |                |
+| MMSI      | int(9)  | NO   | MUL | NULL    |                |
+| Latitude  | float   | NO   |     | NULL    |                |
+| Longitude | float   | NO   |     | NULL    |                |
+| Distance  | int(8)  | NO   |     | NULL    |                |
+| Bearing   | int(3)  | NO   |     | NULL    |                |
+| Type      | int(2)  | NO   |     | NULL    |                |
++-----------+---------+------+-----+---------+----------------+
+*Main table. It is populated by decoder software and stores all decoded data.
+
+mysql> describe ais_stat_data_name;
++------------+-------------+------+-----+---------+----------------+
+| Field      | Type        | Null | Key | Default | Extra          |
++------------+-------------+------+-----+---------+----------------+
+| id         | int(11)     | NO   | PRI | NULL    | auto_increment |
+| mmsi       | int(9)      | NO   |     | NULL    |                |
+| callsign   | varchar(64) | NO   |     | NULL    |                |
+| vesselname | varchar(64) | NO   |     | NULL    |                |
+| timestamp  | int(32)     | NO   |     | NULL    |                |
++------------+-------------+------+-----+---------+----------------+
+*Populated by decoder software, stores all data about ships' callsigns and names.
+
+mysql> describe ais_stat_data_temp;
++-----------+---------+------+-----+---------+----------------+
+| Field     | Type    | Null | Key | Default | Extra          |
++-----------+---------+------+-----+---------+----------------+
+| id        | int(11) | NO   | PRI | NULL    | auto_increment |
+| timestamp | int(10) | NO   | MUL | NULL    |                |
+| MMSI      | int(9)  | NO   | MUL | NULL    |                |
+| Latitude  | float   | NO   |     | NULL    |                |
+| Longitude | float   | NO   |     | NULL    |                |
+| Distance  | int(8)  | NO   |     | NULL    |                |
+| Bearing   | int(3)  | NO   |     | NULL    |                |
+| Type      | int(2)  | NO   |     | NULL    |                |
++-----------+---------+------+-----+---------+----------------+
+*Is copy of ais_stat_data but is cleared every day at 23 in order to keep only
+*last 48 hours of data. It is used to draw data on the site's map in order to
+*make this process very fast.
+
+mysql> describe  ais_stat_login;
++-----------+-------------+------+-----+---------+----------------+
+| Field     | Type        | Null | Key | Default | Extra          |
++-----------+-------------+------+-----+---------+----------------+
+| id        | int(11)     | NO   | PRI | NULL    | auto_increment |
+| Name      | varchar(40) | NO   |     | NULL    |                |
+| Surname   | varchar(40) | NO   |     | NULL    |                |
+| Loginid   | varchar(20) | NO   |     | NULL    |                |
+| Password  | varchar(32) | NO   |     | NULL    |                |
+| Email     | varchar(50) | NO   |     | NULL    |                |
+| City      | varchar(30) | NO   |     | NULL    |                |
+| Province  | varchar(30) | NO   |     | NULL    |                |
+| Country   | varchar(30) | NO   |     | NULL    |                |
+| Timestamp | int(12)     | NO   |     | NULL    |                |
++-----------+-------------+------+-----+---------+----------------+
+*It stores data about site accesses.
+
+mysql> describe ais_stat_login_log;
++-----------+-------------+------+-----+---------+----------------+
+| Field     | Type        | Null | Key | Default | Extra          |
++-----------+-------------+------+-----+---------+----------------+
+| id        | int(11)     | NO   | PRI | NULL    | auto_increment |
+| loginid   | varchar(30) | NO   |     | NULL    |                |
+| ip        | varchar(20) | NO   |     | NULL    |                |
+| timestamp | int(12)     | NO   |     | NULL    |                |
++-----------+-------------+------+-----+---------+----------------+
+*It stores all accesses to site.
+
+mysql> describe ais_fix_day_2012;
++-------+--------+------+-----+---------+-------+
+| Field | Type   | Null | Key | Default | Extra |
++-------+--------+------+-----+---------+-------+
+| id    | int(4) | NO   | PRI | NULL    |       |
+| value | int(4) | NO   |     | NULL    |       |
++-------+--------+------+-----+---------+-------+
+*it stores, on a daily basis, information about number of distinct fixed station 
+*MMSI received. Populated by a query, update every night by ais_daily_duty.
+
+mysql> describe ais_fix_day_2013;
++-------+--------+------+-----+---------+-------+
+| Field | Type   | Null | Key | Default | Extra |
++-------+--------+------+-----+---------+-------+
+| id    | int(4) | NO   | PRI | NULL    |       |
+| value | int(4) | NO   |     | NULL    |       |
++-------+--------+------+-----+---------+-------+
+*it stores, on a daily basis, information about number of distinct fixed station 
+*MMSI received. Populated by a query, update every night by ais_daily_duty.
+
+
+

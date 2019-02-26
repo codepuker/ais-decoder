@@ -1,0 +1,64 @@
+#!/bin/bash
+
+MYSQLUSER=aischkweb
+MYSQLPASS=aischeckweb
+MYSQLDATA=ais
+MYSQLTABL1=ais_stat_data_temp
+MYSQLTABL2=ais_stat_data_2019
+
+TIMESTAMP=`/bin/date +%s`
+if [ "$TIMESTAMP" -lt "2000" ]; then
+    echo "Timestamp basso"
+    sleep 30
+    exit
+fi
+
+DATETIME=`/bin/date +%Y-%m-%d_%H:%M:%S_%s`
+
+
+#select timestamp as "" from ais_stat_data_temp where id=(select max(id) from ais_stat_data_temp);
+#controllo 
+#
+tabella_1=$(mysql -u "$MYSQLUSER" "-p$MYSQLPASS" "$MYSQLDATA" << MYSQLQUERY1
+ select timestamp as "" from $MYSQLTABL1 where id=(select max(id) from $MYSQLTABL1);
+MYSQLQUERY1
+)
+
+#controllo 
+tabella_2=$(mysql -u "$MYSQLUSER" "-p$MYSQLPASS" "$MYSQLDATA" << MYSQLQUERY2
+ select timestamp as "" from $MYSQLTABL2 where id=(select max(id) from $MYSQLTABL2);
+MYSQLQUERY2
+)
+
+delta_tabella_1=$(expr $TIMESTAMP - $tabella_1)
+echo "DEBUG - differenza $delta_tabella_1"
+delta_tabella_1=$(expr $delta_tabella_1 / 60)
+echo "DEBUG - timestamp $TIMESTAMP"
+echo "DEBUG - tabella 1 $tabella_1"
+echo "DEBUG - delta 1   $delta_tabella_1"
+
+
+if [ $delta_tabella_1 -ge 10 ]; then
+   echo "Non ci sono dati nuovi in $MYSQLTABL1"
+   echo "Nessun dato nuovo in $MYSQLTABL1 " | mail -s "AIS Watchdog dati" <username>@<domain>
+else
+   echo "$MYSQLTABL1: tutto ok"
+fi
+
+delta_tabella_2=$(expr $TIMESTAMP - $tabella_2)
+echo "DEBUG - differenza $delta_tabella_2"
+delta_tabella_2=$(expr $delta_tabella_2 / 60)
+echo "DEBUG - timestamp $TIMESTAMP"
+echo "DEBUG - tabella 2 $tabella_2"
+echo "DEBUG - delta 2   $delta_tabella_2"
+
+
+if [ $delta_tabella_2 -ge 10 ]; then
+   echo "Non ci sono dati nuovi in $MYSQLTABL2"
+   echo "Nessun dato nuovo in $MYSQLTABL2 " | mail -s "AIS Watchdog dati" <username>@<domain>
+else
+   echo "$MYSQLTABL2: tutto ok"
+fi
+
+
+

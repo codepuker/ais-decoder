@@ -1,0 +1,124 @@
+#!/bin/bash
+
+#Funzioni di questo script
+#
+#Cancellare i dati presenti nelle tabelle temporanee; FATTO
+#Aggiornare i record di distanza giornalieri; 
+#Aggiornare la tabella del numero di stazioni fisse ricevute; FATTO
+
+MYSQLUSER=aischk
+MYSQLDATA=ais
+MYSQLTAB1=ais_stat_data_temp
+
+TIMESTAMP=`/bin/date +%s`
+if [ "$TIMESTAMP" -lt "2000" ]; then
+    echo "Timestamp basso"
+    sleep 30
+    exit
+fi
+
+echo "Definizione delle variabili"
+
+ANNO=`/bin/date -d 'yesterday 00:00:00' +%Y`
+CALENDARTABLE="ais_fix_day_"$ANNO;
+DAYOFYEAR=`/bin/date -d 'yesterday 00:00:00' +%j`
+
+echo "Controllo: anno $ANNO"
+echo "Controllo: tabella $CALENDARTABLE"
+echo "Controllo: giorno $DAYOFYEAR"
+
+#data attuale
+echo "Now                : "$TIMESTAMP
+DATE_HREAD=$(date -d @$TIMESTAMP +%Y%m%d_%H%M%S)
+echo "Controllo          : "$DATE_HREAD
+echo " "
+echo " "
+#mezzanotte di oggi
+THISMIDNIGHT=$(date -d 'today 00:00:00' +%s)
+echo "This Midnight      : "$THISMIDNIGHT
+DATE_HREAD=$(date -d @$THISMIDNIGHT +%Y%m%d_%H%M%S)
+echo "Controllo          : "$DATE_HREAD
+echo " "
+echo " "
+#mezzanotte di ieri
+LASTMIDNIGHT=$(expr $THISMIDNIGHT - 86400 )
+echo "Last Midnight      : "$LASTMIDNIGHT
+DATE_HREAD=$(date -d @$LASTMIDNIGHT +%Y%m%d_%H%M%S)
+echo "Controllo          : "$DATE_HREAD
+echo " ";
+echo " ";
+#mezzanotte di nove giorni fa
+NINEMIDNIGHT=$(expr $THISMIDNIGHT - 777600 )
+echo "Nine Days Midnight      : "$NINEMIDNIGHT
+DATE_HREAD=$(date -d @$NINEMIDNIGHT +%Y%m%d_%H%M%S)
+echo "Controllo          : "$DATE_HREAD
+echo " ";
+echo " ";
+
+
+#operazioni di pulizia sul database: dalle tabelle temp, togliamo tutti i dati che sono più vecchi
+#di 9 giorni. Li contiamo prima, li contiamo dopo.
+
+mysql_count_ais_before=$(mysql -u "$MYSQLUSER" "$MYSQLDATA" -s -N << MYSQLCHECK1
+select count(*) from $MYSQLTAB1;
+MYSQLCHECK1
+)
+
+mysql_count_ais_count=$(mysql -u "$MYSQLUSER" "$MYSQLDATA" -s -N << MYSQLCHECK2
+select count(*) from $MYSQLTAB1 where timestamp < $NINEMIDNIGHT ;
+MYSQLCHECK2
+)
+
+mysql_count_ais_query=$(mysql -u "$MYSQLUSER" "$MYSQLDATA" -s -N << MYSQLCHECK22
+delete from $MYSQLTAB1 where timestamp < $NINEMIDNIGHT ;
+MYSQLCHECK22
+)
+
+mysql_count_ais_after=$(mysql -u "$MYSQLUSER" "$MYSQLDATA" -s -N << MYSQLCHECK3
+select count(*) from $MYSQLTAB1;
+MYSQLCHECK3
+)
+
+mysql_count_fixed_day=$(mysql -u "$MYSQLUSER" "$MYSQLDATA" -s -N << MYSQLCHECK4
+select count(distinct mmsi) from $MYSQLTAB1 where type=4 and (timestamp > $LASTMIDNIGHT and timestamp < $THISMIDNIGHT) ;
+MYSQLCHECK4
+)
+
+mysql_insert_fixed_day=$(mysql -u "$MYSQLUSER" "$MYSQLDATA" -s -N << MYSQLCHECK5
+update $CALENDARTABLE set value=$mysql_count_fixed_day where id=$DAYOFYEAR
+MYSQLCHECK5
+)
+
+mysql_count_message_day=$(mysql -u "$MYSQLUSER" "$MYSQLDATA" -s -N << MYSQLCHECK6
+select count(*) from $MYSQLTAB1 where timestamp > $LASTMIDNIGHT and timestamp < $THISMIDNIGHT ;
+MYSQLCHECK6
+)
+
+echo "Sezione di controllo:"
+echo "Numero delle righe prima della cancellazione : $mysql_count_ais_before"
+echo "Numero delle righe da cancellare             : $mysql_count_ais_count"
+echo "Numero delle righe dopo la cancellazione     : $mysql_count_ais_after"
+echo "Giorno dell'anno                             : $DAYOFYEAR"
+echo "Numero delle stazioni fisse ieri             : $mysql_count_fixed_day"
+echo "Tabella                                      : $CALENDARTABLE"
+
+
+
+mail -s "Dati AIS $(date -d @$TIMESTAMP +%Y%m%d-%H%M%S)" <usernam>@<domain> <<MAIL2
+Pulizia del database del giorno: $(date -d @$TIMESTAMP +%d%m%Y-%H%M%S)
+
+Pulizia della tabella ais_stat_data_temp
+Numero righe nella tabella   $mysql_count_ais_before ;
+Numero righe da eliminare    $mysql_count_ais_count ;
+Numero righe dopo operazioni $mysql_count_ais_after ;
+
+Processamento delle stazioni fisse:
+Anno corrente:     $ANNO;
+Tabella corrente:  $CALENDARTABLE
+Giorno dell'anno:  $DAYOFYEAR
+Numero delle stazioni fisse : $mysql_count_fixed_day
+Numero delle entries di ieri: $mysql_count_message_day
+
+
+MAIL2
+

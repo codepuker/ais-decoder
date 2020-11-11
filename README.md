@@ -31,3 +31,5 @@ Database name is "ais" and pretty full of tables:
 * ais_type_21_data     - long range packets, require special care;
 * ais_type_4_11_data   - temporary data.
 
+## The Web Interface
+Written in php in order to manage user authentication. Doesn't use css, just plain html. There is a lot of javascript to manage google map integration.
